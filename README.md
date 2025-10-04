@@ -19,6 +19,12 @@ Extracting structured data from articles
 python scripts/manual_test.py
 ```
 
+Start docker with qdrant vector database:
+```
+docker-compose up
+```
+
+
 Running ui app:
 ```
  python -m nasa_hackathon.app

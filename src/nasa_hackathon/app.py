@@ -7,17 +7,34 @@ from ragbits.core.embeddings import LiteLLMEmbedder
 from ragbits.core.llms import LiteLLM, ToolCall
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.vector_stores import InMemoryVectorStore
+from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
-
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
+from ragbits.document_search.documents.document import DocumentType
 from ragbits.chat.interface.ui_customization import (
     UICustomization,
     HeaderCustomization,
     PageMetaCustomization
 )
 
+from qdrant_client import AsyncQdrantClient
+from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentParser
+
+from docling.document_converter import DocumentConverter, MarkdownFormatOption
+from docling.datamodel.base_models import InputFormat
+
 embedder = LiteLLMEmbedder(model_name="azure/text-embedding-3-large")
-vector_store = InMemoryVectorStore(embedder=embedder)
-document_search = DocumentSearch(vector_store=vector_store)
+#vector_store = InMemoryVectorStore(embedder=embedder)
+vector_store = QdrantVectorStore(AsyncQdrantClient(), index_name="global", embedder=embedder)
+from docling.datamodel.pipeline_options import ConvertPipelineOptions, PipelineOptions
+
+format_options = {
+    InputFormat.MD: MarkdownFormatOption(pipeline_options=ConvertPipelineOptions())
+}
+document_router_parser = DocumentParserRouter({
+    DocumentType.MD: DoclingDocumentParser(format_options=format_options, ignore_images=True)
+})
+document_search = DocumentSearch(vector_store=vector_store, parser_router=document_router_parser)
 
 llm = LiteLLM(model_name="azure/gpt-4.1-mini")
 agent = Agent(llm=llm, tools=[document_search.search])
@@ -47,6 +64,7 @@ class MyChat(ChatInterface):
 
     async def setup(self) -> None:
         pass
+        #await document_search.ingest("local://data/test.md")
         #await document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
 
     async def chat(
@@ -84,6 +102,12 @@ class MyChat(ChatInterface):
             label="Answer",
         )
 
+import asyncio
+
+async def ingest():
+    await document_search.ingest("local://data/test.md")
+
 if __name__ == "__main__":
+    #asyncio.run(ingest())
     api = RagbitsAPI(MyChat)
     api.run()
