@@ -10,5 +10,23 @@ services:
     volumes:
       - qdrant_storage:/qdrant/storage
 
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j
+    volumes:
+      - neo4j_storage:/data
+      - neo4j_storage:/logs
+      - neo4j_storage:/import
+      - neo4j_storage:/plugins
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
+      - NEO4JLABS_PLUGINS=["apoc"]
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # BOLT
+    restart: unless-stopped
+
+
 volumes:
   qdrant_storage:
+  neo4j_storage:

@@ -41,7 +41,7 @@ class MyChat(ChatInterface):
     ui_customization = UICustomization(
         # Header customization
         header=HeaderCustomization(
-            title="NASA AI Assistant",
+            title="Space Biology Knowledge Engine",
             subtitle="",
             logo="🚀"
         ),
@@ -49,14 +49,13 @@ class MyChat(ChatInterface):
         # Welcome message shown when chat starts
         welcome_message=(
             "Hello! I'm your AI assistant.\n\n"
-            "How can I help you today? You can ask me **anything**! "
             "I can provide information, answer questions, and assist with various tasks."
         ),
 
         # Page metadata
         meta=PageMetaCustomization(
             favicon="🚀",
-            page_title="NASA AI Assistant"
+            page_title="Space Biology Knowledge Engine"
         )
     )
 
