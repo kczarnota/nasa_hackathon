@@ -21,7 +21,7 @@ python scripts/manual_test.py
 
 Start docker with qdrant vector database:
 ```
-docker-compose up
+docker-compose up -d
 ```
 
 
