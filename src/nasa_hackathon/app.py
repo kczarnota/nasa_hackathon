@@ -6,7 +6,6 @@ from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateTy
 from ragbits.core.embeddings import LiteLLMEmbedder
 from ragbits.core.llms import LiteLLM, ToolCall
 from ragbits.core.prompt import ChatFormat
-from ragbits.core.vector_stores import InMemoryVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
@@ -20,11 +19,10 @@ from ragbits.chat.interface.ui_customization import (
 from qdrant_client import AsyncQdrantClient
 from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentParser
 
-from docling.document_converter import DocumentConverter, MarkdownFormatOption
+from docling.document_converter import MarkdownFormatOption
 from docling.datamodel.base_models import InputFormat
 
 embedder = LiteLLMEmbedder(model_name="azure/text-embedding-3-large")
-#vector_store = InMemoryVectorStore(embedder=embedder)
 vector_store = QdrantVectorStore(AsyncQdrantClient(), index_name="global", embedder=embedder)
 from docling.datamodel.pipeline_options import ConvertPipelineOptions, PipelineOptions
 
@@ -73,6 +71,8 @@ class MyChat(ChatInterface):
         history: ChatFormat,
         context: ChatContext,
     ) -> AsyncGenerator[ChatResponse]:
+        chunk_paths = []
+        chunk_content = []
         async for result in agent.run_streaming(message):
             match result:
                 case str():
@@ -95,17 +95,28 @@ class MyChat(ChatInterface):
                         label="Search",
                         description=f"Found {len(result.result)} relevant chunks.",
                     )
+                    for r in result.result:
+                        chunk_paths.append(r.document_meta.source.path.stem)
+                        chunk_content.append(r.text_representation)
 
+        for r in set(chunk_paths):
+            yield self.create_reference(title=r, content=r, url=f"https://pmc.ncbi.nlm.nih.gov/articles/{r}")
         yield self.create_live_update(
             update_id="1",
             type=LiveUpdateType.FINISH,
-            label="Answer",
+            label="Chunks",
+            description="\n\n".join([
+                        f"{path}: {content}" for path, content in zip(chunk_paths, chunk_content)
+                    ]),
         )
 
 import asyncio
 
 async def ingest():
-    await document_search.ingest("local://data/test.md")
+    await document_search.ingest("local://data/PMC4964660.md")
+    await document_search.ingest("local://data/PMC5666799.md")
+    await document_search.ingest("local://data/PMC6387434.md")
+    await document_search.ingest("local://data/PMC7072278.md")
 
 if __name__ == "__main__":
     #asyncio.run(ingest())
