@@ -8,6 +8,7 @@ dependencies = [
     "ragbits-core[qdrant]",
     "ragbits-document-search",
     "ragbits-chat",
+    "ragbits-agents>=1.3.0",
 ]
 
 [tool.uv]
