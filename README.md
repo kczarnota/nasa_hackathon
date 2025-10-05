@@ -1,4 +1,4 @@
-# Nasa hackathon
+# AI driven NASA knowledge base
 
 AI driven NASA knowledge base is a fully operational solution designed to make the knowledge from 608 NASA bioscience publications accessible to a wide audience.
 Our goal is to democratize complicated science knowledge and make it available to everybody. The system uses a robust data processing pipeline to download, convert, and extract semantics from XML articles before ingesting them into databases. It offers three distinct user interfaces:
