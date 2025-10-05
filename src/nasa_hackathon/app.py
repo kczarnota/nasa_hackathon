@@ -1,3 +1,5 @@
+import asyncio
+import os
 from collections.abc import AsyncGenerator
 from ragbits.agents import Agent, ToolCallResult
 from ragbits.chat.api import RagbitsAPI
@@ -59,11 +61,6 @@ class MyChat(ChatInterface):
         )
     )
 
-    async def setup(self) -> None:
-        pass
-        #await document_search.ingest("local://data/test.md")
-        #await document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
-
     async def chat(
         self,
         message: str,
@@ -109,15 +106,11 @@ class MyChat(ChatInterface):
                     ]),
         )
 
-import asyncio
 
 async def ingest():
-    await document_search.ingest("local://data/PMC4964660.md")
-    await document_search.ingest("local://data/PMC5666799.md")
-    await document_search.ingest("local://data/PMC6387434.md")
-    await document_search.ingest("local://data/PMC7072278.md")
+    for file_path in os.listdir("data"):
+        await document_search.ingest(f"local://data/{file_path}")
 
 if __name__ == "__main__":
-    #asyncio.run(ingest())
     api = RagbitsAPI(MyChat)
     api.run()

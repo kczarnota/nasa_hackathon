@@ -15,10 +15,6 @@ import neo4j
 from neo4j_graphrag.embeddings import AzureOpenAIEmbeddings
 from neo4j_graphrag.experimental.pipeline.kg_builder import SimpleKGPipeline
 from neo4j_graphrag.experimental.pipeline.pipeline import PipelineResult
-from neo4j_graphrag.experimental.pipeline.types.schema import (
-    EntityInputType,
-    RelationInputType,
-)
 from neo4j_graphrag.llm import LLMInterface
 from neo4j_graphrag.llm import AzureOpenAILLM
 
@@ -34,38 +30,6 @@ logging.getLogger("neo4j_graphrag").setLevel(logging.DEBUG)
 URI = "neo4j://localhost:7687"
 AUTH = (os.environ["NEO4J_USER"], os.environ["NEO4J_PASSWORD"])
 
-# Text to process
-#TEXT = """The son of Duke Leto Atreides and the Lady Jessica, Paul is the heir of House Atreides,
-#an aristocratic family that rules the planet Caladan, the rainy planet, since 10191."""
-
-with open("data/PMC4964660.md") as f:
-    TEXT = f.read()
-
-# Instantiate Entity and Relation objects. This defines the
-# entities and relations the LLM will be looking for in the text.
-# NODE_TYPES: list[EntityInputType] = [
-#     # entities can be defined with a simple label...
-#     "Person",
-#     # ... or with a dict if more details are needed,
-#     # such as a description:
-#     {"label": "House", "description": "Family the person belongs to"},
-#     # or a list of properties the LLM will try to attach to the entity:
-#     {"label": "Planet", "properties": [{"name": "weather", "type": "STRING"}]},
-# ]
-# # same thing for relationships:
-# RELATIONSHIP_TYPES: list[RelationInputType] = [
-#     "PARENT_OF",
-#     {
-#         "label": "HEIR_OF",
-#         "description": "Used for inheritor relationship between father and sons",
-#     },
-#     {"label": "RULES", "properties": [{"name": "fromYear", "type": "INTEGER"}]},
-# ]
-# PATTERNS = [
-#     ("Person", "PARENT_OF", "Person"),
-#     ("Person", "HEIR_OF", "House"),
-#     ("House", "RULES", "Planet"),
-# ]
 
 NODE_TYPES = [
     {"label": "AstronautGroup", "properties": [
@@ -189,16 +153,6 @@ async def define_and_run_pipeline(
         },
         from_pdf=False,
     )
-    #return await kg_builder.run_async(
-        #file_path="data/PMC4964660.md"
-        #text=TEXT,
-        # optional, specify file path for the Document node
-        # if not, a random name will be generated
-        # file_path="my_document.txt"
-        # optional, add document metadata, each item will
-        # be saved as a property of the Document node
-        # document_metadata={"author": "Frank Herbert"},
-    #)
 
     for path in ["data/PMC4964660.md", "data/PMC5666799.md", "data/PMC6387434.md", "data/PMC7072278.md"]:
         with open(path, "r") as f:
@@ -209,13 +163,6 @@ async def define_and_run_pipeline(
 
 
 async def main() -> PipelineResult:
-    #llm = OpenAILLM(
-    #    model_name="gpt-4o",
-    #    model_params={
-    #        "max_tokens": 2000,
-    #        "response_format": {"type": "json_object"},
-    #    },
-    #)
     llm = AzureOpenAILLM(model_name="gpt-4.1-mini",
                             model_params={
                                 "max_tokens": 2000,
