@@ -1,4 +1,3 @@
-import asyncio
 import os
 from collections.abc import AsyncGenerator
 from ragbits.agents import Agent, ToolCallResult
@@ -23,10 +22,16 @@ from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentPar
 
 from docling.document_converter import MarkdownFormatOption
 from docling.datamodel.base_models import InputFormat
+from ragbits.core.llms.mock import MockLLM, MockLLMOptions
+from ragbits.core.embeddings.dense.noop import NoopEmbedder
 
-embedder = LiteLLMEmbedder(model_name="azure/text-embedding-3-large")
-vector_store = QdrantVectorStore(AsyncQdrantClient(), index_name="global", embedder=embedder)
-from docling.datamodel.pipeline_options import ConvertPipelineOptions, PipelineOptions
+from dotenv import load_dotenv
+load_dotenv()
+
+embedder = LiteLLMEmbedder(model_name="azure/text-embedding-3-small")
+#embedder = NoopEmbedder(return_values=[[3072 * [0.1]]])
+vector_store = QdrantVectorStore(AsyncQdrantClient(host=os.getenv("HOST")), index_name="global", embedder=embedder)
+from docling.datamodel.pipeline_options import ConvertPipelineOptions
 
 format_options = {
     InputFormat.MD: MarkdownFormatOption(pipeline_options=ConvertPipelineOptions())
@@ -36,7 +41,19 @@ document_router_parser = DocumentParserRouter({
 })
 document_search = DocumentSearch(vector_store=vector_store, parser_router=document_router_parser)
 
-llm = LiteLLM(model_name="azure/gpt-4.1-mini")
+llm = LiteLLM(model_name="azure/gpt-4.1-nano")
+# options = MockLLMOptions(
+#         response="Mocked response",
+#         tool_calls=[
+#             {
+#                 "name": "search",
+#                 "arguments": '{"query": "Tell me about radiation experiments"}',
+#                 "id": "test",
+#                 "type": "function",
+#             }
+#         ],
+#     )
+# llm = MockLLM(default_options=options)
 agent = Agent(llm=llm, tools=[document_search.search])
 
 class MyChat(ChatInterface):
@@ -113,4 +130,4 @@ async def ingest():
 
 if __name__ == "__main__":
     api = RagbitsAPI(MyChat)
-    api.run()
+    api.run("0.0.0.0")

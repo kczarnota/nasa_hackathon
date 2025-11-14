@@ -1,0 +1,11 @@
+.git
+node_modules/
+*.log
+.env
+.venv/
+tests/
+tmp/
+dist/
+coverage/
+Dockerfile
+.dockerignore

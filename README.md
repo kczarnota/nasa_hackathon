@@ -31,7 +31,7 @@ Move extracted articles to `data` folder.
 ## Setting up infrastructure
 Running vector and graph databases
 ```
-docker-compose up -d
+docker compose up -d
 ```
 
 ## Data ingestion
@@ -70,4 +70,49 @@ Visit `http://localhost:7474/browser/` and provide your `Cypher` query into comm
 Example query:
 ```
 MATCH (d:AstronautGroup)-[f:FLEW_ON_MISSION]->(m:Mission {name: "Apollo 1"} ) return d
+```
+
+## Deployment
+install azure cli
+```
+curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /usr/share/keyrings/microsoft.gpg > /dev/null
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+sudo apt-get update && sudo apt-get install -y azure-cli
+az version
+```
+
+Build and push image to register
+```
+az login
+az provider register --namespace Microsoft.ContainerRegistry (only once)
+az acr create --resource-group nasa_hackathon --name nasahackathonacr --sku Basic
+az acr login --name nasahackathonacr
+docker build -t nasahackathonacr.azurecr.io/myapp:tag .
+docker push nasahackathonacr.azurecr.io/myapp:tag
+```
+
+Install kubectl, k9s and deploy
+```
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+az provider register --namespace Microsoft.Insights
+az provider register --namespace Microsoft.ContainerService
+az aks create --resource-group nasa_hackathon --name nasaAKSCluster --node-count 2 --generate-ssh-keys --node-vm-size Standard_B2s
+az aks get-credentials --resource-group nasa_hackathon --name nasaAKSCluster
+az aks update -n nasaAKSCluster -g nasa_hackathon --attach-acr nasahackathonacr
+kubectl create configmap api-config --from-env-file=.env
+
+kubectl apply -f deployment.yaml
+kubectl get svc api
+
+curl -s https://api.github.com/repos/derailed/k9s/releases/latest \
+| grep "browser_download_url.*Linux_amd64.tar.gz" \
+| cut -d '"' -f 4 \
+| wget -i -
+
+tar -xzf k9s_Linux_amd64.tar.gz
+sudo mv k9s /usr/local/bin/
+
+kubectl delete job ingest-job
+kubectl get pods
 ```
